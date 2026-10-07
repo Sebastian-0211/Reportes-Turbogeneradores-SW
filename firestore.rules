@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reportes publicados para clientes (acceso abierto para lectura interactiva)
+    match /published_reports/{reportId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.isPublic == true
+        && request.resource.data.title is string
+        && request.resource.data.turbomachineData is string;
+      allow delete: if false;
+    }
+
+    // Colección de turbomáquinas configuradas
+    match /turbomachines/{turbomachineId} {
+      allow read, write: if true;
+    }
+
+    // Ruta de verificación de conectividad
+    match /test/{docId} {
+      allow read: if true;
+    }
+  }
+}

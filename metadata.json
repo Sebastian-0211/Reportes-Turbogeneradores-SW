@@ -1,0 +1,6 @@
+{
+  "name": "Turbomachine Orbit Analyzer & Presentation",
+  "description": "Aplicación interactiva para análisis, historial, comparación y presentación didáctica de órbitas y vibraciones en turbogeneradores con exportación de reportes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

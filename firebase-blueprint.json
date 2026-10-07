@@ -1,0 +1,47 @@
+{
+  "entities": {
+    "PublishedReport": {
+      "title": "PublishedReport",
+      "description": "Reporte interactivo publicado para acceso abierto a clientes y consulta técnica sin permisos de edición.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identificador único del reporte compartido." },
+        "title": { "type": "string", "description": "Título del reporte de órbitas." },
+        "turbomachineId": { "type": "string", "description": "ID de la máquina asociada." },
+        "turbomachineName": { "type": "string", "description": "Nombre de la unidad (ej. TG4)." },
+        "company": { "type": "string", "description": "Empresa o planta asociada." },
+        "analyst": { "type": "string", "description": "Nombre del especialista de vibraciones." },
+        "createdAt": { "type": "string", "description": "Fecha y hora de publicación ISO." },
+        "turbomachineData": { "type": "string", "description": "Estructura serializada con apoyos, proximitores, mediciones y comentarios." },
+        "isPublic": { "type": "boolean", "description": "Indica si el reporte es accesible públicamente para lectura." }
+      },
+      "required": ["id", "title", "turbomachineName", "createdAt", "turbomachineData", "isPublic"]
+    },
+    "TurbomachineRecord": {
+      "title": "TurbomachineRecord",
+      "description": "Configuración y datos completos del turbogenerador con sus apoyos y campañas periódicas.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID del turbogenerador." },
+        "name": { "type": "string", "description": "Nombre de la unidad." },
+        "fullName": { "type": "string", "description": "Nombre completo." },
+        "tag": { "type": "string", "description": "Tag del equipo." },
+        "company": { "type": "string", "description": "Empresa." },
+        "analyst": { "type": "string", "description": "Analista." },
+        "updatedAt": { "type": "string", "description": "Última fecha de actualización." },
+        "payloadJson": { "type": "string", "description": "Estructura completa de máquina con apoyos, proximitores y períodos." }
+      },
+      "required": ["id", "name", "updatedAt", "payloadJson"]
+    }
+  },
+  "firestore": {
+    "/published_reports/{reportId}": {
+      "schema": "PublishedReport",
+      "description": "Colección de reportes interactivos públicos accesibles mediante link para clientes."
+    },
+    "/turbomachines/{turbomachineId}": {
+      "schema": "TurbomachineRecord",
+      "description": "Colección de turbogeneradores gestionados por el analista."
+    }
+  }
+}
