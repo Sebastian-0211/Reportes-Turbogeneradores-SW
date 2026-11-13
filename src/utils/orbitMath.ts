@@ -26,6 +26,43 @@ export function generateOrbitAndWaveform(
   ch: ChannelMeasurement,
   numPoints: number = 240
 ): { orbit: OrbitData; waveform: WaveformData } {
+  // Si el canal tiene puntos vectoriales reales extraídos por la IA de la imagen, los utilizamos directamente
+  if (ch.vectorPoints && ch.vectorPoints.length > 20) {
+    let maxR = 0;
+    const pts = ch.vectorPoints.map((pt) => {
+      const r = Math.sqrt(pt.x * pt.x + pt.y * pt.y);
+      if (r > maxR) maxR = r;
+      return pt;
+    });
+
+    const kp = ch.keyphasorPoint || pts[0] || { x: 0, y: 0 };
+
+    // Generar waveforms correspondientes a los puntos vectoriales
+    const xWave: Point2D[] = [];
+    const yWave: Point2D[] = [];
+    const revolutions: number[] = [];
+    pts.forEach((pt, idx) => {
+      const rev = (idx / pts.length) * 2; // Simular 2 revoluciones
+      revolutions.push(rev);
+      xWave.push({ x: rev, y: pt.x });
+      yWave.push({ x: rev, y: pt.y });
+    });
+
+    return {
+      orbit: {
+        points: pts,
+        keyphasorPoint: kp,
+        keyphasorAngle: ch.angleDeg,
+        maxRadius: Math.max(maxR * 1.25, 0.8),
+      },
+      waveform: {
+        revolutions,
+        xWave,
+        yWave,
+      },
+    };
+  }
+
   const points: Point2D[] = [];
   const xWave: Point2D[] = [];
   const yWave: Point2D[] = [];
@@ -37,7 +74,6 @@ export function generateOrbitAndWaveform(
   const pattern = ch.patternType;
 
   // Keyphasor dot location
-  const kpTheta = 0;
   let kpX = 0;
   let kpY = 0;
 

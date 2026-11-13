@@ -1,54 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { Turbomachine, PeriodReport } from './types/turbomachine';
-import { INITIAL_TURBOMACHINES } from './data/initialData';
-import { PowerBiHeader } from './components/PowerBiHeader';
-import { PowerBiDualView } from './components/PowerBiDualView';
-import { TurbineTabs } from './components/TurbineTabs';
-import { OrbitOverlayView } from './components/OrbitOverlayView';
-import { HistoricalTimeline } from './components/HistoricalTimeline';
-import { PresentationMode } from './components/PresentationMode';
+import { Turbomachine } from './types/turbomachine';
+import { ModernIndustrialHeader } from './components/ModernIndustrialHeader';
+import { CockpitDashboard } from './components/CockpitDashboard';
+import { ComparativeTimelineView } from './components/ComparativeTimelineView';
+import { InteractiveReportGenerator } from './components/InteractiveReportGenerator';
 import { DidacticOrbitGuide } from './components/DidacticOrbitGuide';
+import { SmartImageUploaderModal } from './components/SmartImageUploaderModal';
 import { MeasurementModal } from './components/MeasurementModal';
 import { ExportModal } from './components/ExportModal';
 import { TurbineSettingsModal } from './components/TurbineSettingsModal';
 import { CreateTurbineWizard } from './components/CreateTurbineWizard';
-import { ShareReportModal } from './components/ShareReportModal';
+import { SharePointSyncModal } from './components/SharePointSyncModal';
 import { ClientReportView } from './components/ClientReportView';
 import { 
-  getPublishedReportFromCloud, 
-  saveTurbomachineCloud, 
-  loadTurbomachinesCloud,
-  testFirebaseConnection 
-} from './services/firebase';
-
-const LOCAL_STORAGE_KEY = 'turbomachine_orbits_app_v1';
+  loadAllTurbomachines, 
+  saveAllTurbomachines 
+} from './services/storageService';
 
 export default function App() {
-  // Check if current URL is a shared client link (?report=rep-...)
+  // Check if current URL is a shared client link (?report=...)
   const [clientModeReport, setClientModeReport] = useState<{
     turbomachine: Turbomachine;
     title: string;
   } | null>(null);
-  const [loadingClientReport, setLoadingClientReport] = useState<boolean>(true);
 
   // Load from LocalStorage or initialize with realistic data
   const [turbines, setTurbines] = useState<Turbomachine[]>(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {
-      console.error('Failed to load from localStorage', e);
-    }
-    return INITIAL_TURBOMACHINES;
+    return loadAllTurbomachines();
   });
 
-  const [activeTurbineId, setActiveTurbineId] = useState<string>('tg4');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'overlay' | 'history' | 'presentation' | 'guide'>('dashboard');
+  const [activeTurbineId, setActiveTurbineId] = useState<string>(() => {
+    return turbines[0]?.id || 'tg4';
+  });
+
+  const [activeTab, setActiveTab] = useState<'cockpit' | 'history' | 'report' | 'guide'>('cockpit');
 
   // Modals state
+  const [smartUploaderOpen, setSmartUploaderOpen] = useState<boolean>(false);
   const [measurementModalState, setMeasurementModalState] = useState<{
     isOpen: boolean;
     mode: 'edit_channel' | 'add_period';
@@ -61,84 +49,61 @@ export default function App() {
 
   const [exportModalOpen, setExportModalOpen] = useState<boolean>(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState<boolean>(false);
-  const [presentationOpen, setPresentationOpen] = useState<boolean>(false);
   const [createWizardOpen, setCreateWizardOpen] = useState<boolean>(false);
-  const [shareModalOpen, setShareModalOpen] = useState<boolean>(false);
+  const [sharePointModalOpen, setSharePointModalOpen] = useState<boolean>(false);
 
-  // Test Firebase connection & check for shared link on mount
+  // Check URL query parameters on mount (if opened in client mode)
   useEffect(() => {
-    testFirebaseConnection();
-
     const searchParams = new URLSearchParams(window.location.search);
     const reportId = searchParams.get('report');
 
     if (reportId) {
-      // Fetch report from Firebase Firestore
-      getPublishedReportFromCloud(reportId)
-        .then((res) => {
-          if (res) {
-            setClientModeReport({
-              turbomachine: res.turbomachine,
-              title: res.title,
-            });
-          } else {
-            // Fallback: check if matches any local turbine
-            const found = turbines.find((t) => reportId.includes(t.id));
-            if (found) {
-              setClientModeReport({
-                turbomachine: found,
-                title: `Reporte de Órbitas - ${found.fullName}`,
-              });
-            }
-          }
-        })
-        .catch((e) => console.error(e))
-        .finally(() => setLoadingClientReport(false));
-    } else {
-      setLoadingClientReport(false);
-
-      // Attempt to load cloud turbomachines
-      loadTurbomachinesCloud().then((cloudList) => {
-        if (cloudList && cloudList.length > 0) {
-          setTurbines((prev) => {
-            const merged = [...prev];
-            cloudList.forEach((ct) => {
-              const idx = merged.findIndex((m) => m.id === ct.id);
-              if (idx >= 0) merged[idx] = ct;
-              else merged.push(ct);
-            });
-            return merged;
-          });
-        }
-      }).catch(() => {});
-    }
-  }, []);
-
-  // Auto-save to localStorage and cloud
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(turbines));
-    } catch (e) {
-      console.error('Failed to save to localStorage', e);
+      const found = turbines.find((t) => reportId.includes(t.id)) || turbines[0];
+      if (found) {
+        setClientModeReport({
+          turbomachine: found,
+          title: `Reporte de Órbitas - ${found.fullName}`,
+        });
+      }
     }
   }, [turbines]);
 
-  // Current turbine object
-  const currentTurbine = turbines.find((t) => t.id === activeTurbineId) || turbines[0];
+  // Auto-save to LocalStorage whenever turbines state changes
+  useEffect(() => {
+    saveAllTurbomachines(turbines);
+  }, [turbines]);
 
-  // Update current turbine and sync to cloud
+  // Current turbine object
+  const currentTurbine = turbines.find((t) => t.id === activeTurbineId) || turbines[0] || {
+    id: 'tg-default',
+    name: 'TG',
+    fullName: 'Turbomáquina',
+    tag: 'TG',
+    nominalRpm: 3600,
+    ratedPowerMW: 10,
+    company: 'Empresa',
+    analyst: 'Analista',
+    periods: [],
+  };
+
+  // Update current turbine and persist
   const handleUpdateTurbine = (updated: Turbomachine) => {
     setTurbines((prev) =>
       prev.map((t) => (t.id === updated.id ? updated : t))
     );
-    saveTurbomachineCloud(updated);
   };
 
   // Add turbine from wizard
   const handleSaveCreatedTurbine = (newTurbine: Turbomachine) => {
     setTurbines((prev) => [...prev, newTurbine]);
     setActiveTurbineId(newTurbine.id);
-    saveTurbomachineCloud(newTurbine);
+  };
+
+  // Apply measurements from Smart AI Image Ingestion
+  const handleApplySmartUploadedMeasurements = (updatedTurbines: Turbomachine[], targetTurbineId: string) => {
+    setTurbines(updatedTurbines);
+    setActiveTurbineId(targetTurbineId);
+    setActiveTab('cockpit');
   };
 
   // Open editor for specific channel
@@ -151,14 +116,6 @@ export default function App() {
     });
   };
 
-  // Open add new period
-  const handleOpenAddPeriod = () => {
-    setMeasurementModalState({
-      isOpen: true,
-      mode: 'add_period',
-    });
-  };
-
   // If opening in shared client mode (?report=...)
   if (clientModeReport) {
     return (
@@ -166,7 +123,6 @@ export default function App() {
         turbomachine={clientModeReport.turbomachine}
         reportTitle={clientModeReport.title}
         onExitToAnalystMode={() => {
-          // Clear query param and reload analyst view
           window.history.replaceState({}, '', window.location.pathname);
           setClientModeReport(null);
         }}
@@ -175,65 +131,58 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-800">
-      {/* Power BI Header & Ribbon */}
-      <PowerBiHeader
+    <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
+      {/* Modern High-End Technical Navigation Header */}
+      <ModernIndustrialHeader
+        turbines={turbines}
         currentTurbomachine={currentTurbine}
+        activeTurbineId={activeTurbineId}
+        onSelectTurbine={(id) => setActiveTurbineId(id)}
         activeTab={activeTab}
-        onSelectTab={(tab) => {
-          if (tab === 'presentation') {
-            setPresentationOpen(true);
-          } else {
-            setActiveTab(tab);
-          }
-        }}
-        onOpenAddPeriod={handleOpenAddPeriod}
-        onOpenExport={() => setExportModalOpen(true)}
-        onOpenShareLink={() => setShareModalOpen(true)}
+        onSelectTab={(tab) => setActiveTab(tab)}
+        onOpenSmartUploader={() => setSmartUploaderOpen(true)}
         onOpenCreateWizard={() => setCreateWizardOpen(true)}
         onOpenSettings={() => setSettingsModalOpen(true)}
+        onOpenSharePointSync={() => setSharePointModalOpen(true)}
+        onOpenExportJson={() => setExportModalOpen(true)}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 p-3 md:p-5 max-w-[1600px] w-full mx-auto">
-        {activeTab === 'dashboard' && (
-          <PowerBiDualView
+      {/* Main Workspace Area */}
+      <main className="flex-1 p-4 md:p-6 max-w-[1600px] w-full mx-auto">
+        {activeTab === 'cockpit' && (
+          <CockpitDashboard
             turbomachine={currentTurbine}
             onUpdateTurbomachine={handleUpdateTurbine}
             onOpenMeasurementEditor={handleOpenMeasurementEditor}
+            onOpenSmartUploader={() => setSmartUploaderOpen(true)}
             onOpenDidacticGuide={() => setActiveTab('guide')}
           />
         )}
 
-        {activeTab === 'overlay' && (
-          <OrbitOverlayView turbomachine={currentTurbine} />
+        {activeTab === 'history' && (
+          <ComparativeTimelineView
+            turbomachine={currentTurbine}
+            onOpenMeasurementEditor={handleOpenMeasurementEditor}
+          />
         )}
 
-        {activeTab === 'history' && (
-          <HistoricalTimeline
+        {activeTab === 'report' && (
+          <InteractiveReportGenerator
             turbomachine={currentTurbine}
-            onSelectPeriodChannel={() => setActiveTab('dashboard')}
           />
         )}
 
         {activeTab === 'guide' && <DidacticOrbitGuide />}
       </main>
 
-      {/* Bottom Sheet / Turbine Tabs (Power BI Style) */}
-      <TurbineTabs
+      {/* AI Smart Image Ingestion Modal */}
+      <SmartImageUploaderModal
         turbines={turbines}
         activeTurbineId={activeTurbineId}
-        onSelectTurbine={(id) => setActiveTurbineId(id)}
-        onAddTurbine={() => setCreateWizardOpen(true)}
+        isOpen={smartUploaderOpen}
+        onClose={() => setSmartUploaderOpen(false)}
+        onApplyProcessedMeasurements={handleApplySmartUploadedMeasurements}
       />
-
-      {/* Fullscreen Presentation Mode */}
-      {presentationOpen && (
-        <PresentationMode
-          turbomachine={currentTurbine}
-          onClose={() => setPresentationOpen(false)}
-        />
-      )}
 
       {/* Wizard to create turbomachine with bearings & proximitors */}
       {createWizardOpen && (
@@ -245,11 +194,19 @@ export default function App() {
         />
       )}
 
-      {/* Modal to share open client link via Firebase */}
-      {shareModalOpen && (
-        <ShareReportModal
-          turbomachine={currentTurbine}
-          onClose={() => setShareModalOpen(false)}
+      {/* Modal for SharePoint & Local Database management */}
+      {sharePointModalOpen && (
+        <SharePointSyncModal
+          turbines={turbines}
+          currentTurbomachine={currentTurbine}
+          onUpdateTurbines={(updated) => {
+            setTurbines(updated);
+            if (updated.length > 0) {
+              setActiveTurbineId(updated[0].id);
+            }
+          }}
+          onOpenExportHtml={() => setExportModalOpen(true)}
+          onClose={() => setSharePointModalOpen(false)}
         />
       )}
 
@@ -267,7 +224,7 @@ export default function App() {
         />
       )}
 
-      {/* Export Report Modal */}
+      {/* Export Report / Backup Modal */}
       {exportModalOpen && (
         <ExportModal
           turbomachine={currentTurbine}

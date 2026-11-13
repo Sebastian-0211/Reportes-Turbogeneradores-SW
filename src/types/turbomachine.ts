@@ -51,6 +51,27 @@ export interface ChannelMeasurement {
   recommendation?: string;
   imageUrl?: string; // uploaded image base64
   defectObserved?: string;
+  vectorPoints?: { x: number; y: number }[]; // Puntos digitalizados reales extraídos de la imagen
+  keyphasorPoint?: { x: number; y: number }; // Punto de marca de fase 1X detectado
+  aiExtraction?: ImageExtractionResult; // Metadatos de la extracción offline
+}
+
+export interface ImageExtractionResult {
+  sourceFileName: string;
+  confidence: number; // 0 a 100%
+  extractedAt: string;
+  detectedTurbineTag?: string; // e.g. "TG4"
+  detectedBearingName?: string; // e.g. "Apoyo 1 - Lado Libre Turbina"
+  detectedProbes?: string; // e.g. "1TX / 1TY"
+  detectedRpm?: number;
+  detectedPkToPkX?: number;
+  detectedPkToPkY?: number;
+  detectedPhaseAngle?: number;
+  detectedUnit?: 'mils' | 'microns';
+  detectedPattern?: OrbitPattern;
+  rawExtractedText?: string;
+  isVectorized: boolean;
+  pointsCount: number;
 }
 
 export interface PeriodReport {

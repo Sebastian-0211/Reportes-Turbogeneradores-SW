@@ -8,9 +8,10 @@ import {
   Download, 
   PlusCircle, 
   Settings, 
-  Share2,
+  FolderSync,
   FileSpreadsheet,
-  CheckCircle2
+  ShieldCheck,
+  FileCode
 } from 'lucide-react';
 
 interface PowerBiHeaderProps {
@@ -34,7 +35,7 @@ export const PowerBiHeader: React.FC<PowerBiHeaderProps> = ({
   onOpenShareLink,
   onOpenCreateWizard,
   onOpenSettings,
-  lastSavedText = 'Conectado a Firebase Cloud',
+  lastSavedText = 'Modo Local Seguro · SharePoint / Disco',
 }) => {
   return (
     <header className="bg-slate-900 text-white select-none shadow-md">
@@ -48,26 +49,33 @@ export const PowerBiHeader: React.FC<PowerBiHeaderProps> = ({
             Reporte de Orbitas Turbogeneradores SW
           </span>
           <span className="text-slate-500">·</span>
-          <span className="text-slate-400 text-[11px] truncate hidden sm:inline">
-            {lastSavedText} - {currentTurbomachine.analyst}
+          <div className="flex items-center gap-1.5 text-emerald-400 text-[11px] font-medium hidden sm:inline-flex">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>{lastSavedText}</span>
+          </div>
+          <span className="text-slate-500 hidden sm:inline">·</span>
+          <span className="text-slate-400 text-[11px] truncate hidden md:inline">
+            Especialista: {currentTurbomachine.analyst}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={onOpenShareLink}
-            className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors shadow-xs"
-            title="Genera un enlace abierto en Firebase para que los clientes interactúen con el informe en modo lectura"
+            className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors shadow-xs"
+            title="Guardar o cargar base de datos compartida en SharePoint o disco"
           >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>Generar Enlace para Cliente</span>
+            <FolderSync className="w-3.5 h-3.5 text-blue-200" />
+            <span>SharePoint / Base de Datos</span>
           </button>
 
           <button
             onClick={onOpenExport}
             className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded transition-colors"
+            title="Exportar informe interactivo HTML o imprimir PDF"
           >
-            <span>Descargar / PDF</span>
+            <FileCode className="w-3.5 h-3.5 text-purple-300" />
+            <span>Reporte HTML / PDF</span>
           </button>
         </div>
       </div>

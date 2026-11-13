@@ -1,12 +1,10 @@
 {
-  "projectId": "weighty-autumn-xxjsq",
-  "appId": "1:688245615862:web:bd5fe75e0cd0ec7b8810d7",
-  "apiKey": "AIzaSyCX-dBag0ajxML9Mv_KAZAD4paKicCEudo",
-  "authDomain": "weighty-autumn-xxjsq.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-turbomachineorbi-dc454535-b582-4783-bab7-e9826e497ab7",
-  "storageBucket": "weighty-autumn-xxjsq.firebasestorage.app",
-  "messagingSenderId": "688245615862",
-  "measurementId": "",
-  "oAuthClientId": "688245615862-e65ocah9t3t0falcnc98b6khjqq4r7h4.apps.googleusercontent.com",
-  "recaptchaSiteKey": ""
+  "projectId": "generador-inf-turbomaquinaria",
+  "appId": "1:328859005808:web:b986ad68d984c2c718d5b5",
+  "apiKey": "AIzaSyBZx5yg5y1QbKlzoqWGS-A7km686yqpSUE",
+  "authDomain": "generador-inf-turbomaquinaria.firebaseapp.com",
+  "firestoreDatabaseId": "",
+  "storageBucket": "generador-inf-turbomaquinaria.firebasestorage.app",
+  "messagingSenderId": "328859005808",
+  "measurementId": "G-G52S91RL4L"
 }
